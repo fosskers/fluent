@@ -5,5 +5,13 @@
   :homepage ""
   :depends-on (:parcom)
   :serial t
-  :components ((:module "src" :components ((:file "package"))))
-  :description "Software localisation via Mozilla's Project Fluent.")
+  :components ((:module "src"
+                :components ((:file "package")
+                             (:file "parser"))))
+  :description "Software localisation via Mozilla's Project Fluent."
+  :in-order-to ((test-op (test-op :fluent/tests))))
+
+(defsystem "fluent/tests"
+  :depends-on (:fluent :parachute)
+  :components ((:module "tests" :components ((:file "tests"))))
+  :perform (test-op (op c) (symbol-call :parachute :test :fluent/tests)))
