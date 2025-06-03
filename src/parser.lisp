@@ -25,6 +25,7 @@
 (defparameter +brace-open+     (p:char #\{))
 (defparameter +brace-close+    (p:char #\}))
 (defparameter +dollar+         (p:char #\$))
+(defparameter +space+          (p:char #\space))
 
 #+nil
 (funcall +comment+ (p:in "# hello"))
@@ -51,6 +52,9 @@
 
 ;; --- Parsers --- ;;
 
+;; NOTE: "The syntax should allow good error recovery: an error in one message
+;; should not break the whole file. The parser should resume normal parsing as
+;; soon as possible and with as few losses as possible."
 (defun pair (offset)
   "A single localisation pair."
   (funcall (<*> (<* (p:take-while1 (lambda (c) (not (eql c #\space))))
@@ -61,7 +65,16 @@
            offset))
 
 (defun entry (offset)
-  "The actual meat of a single localisation."
+  "Many lines."
+  (p:fmap (lambda (lists) (apply #'append lists))
+          (funcall (p:sep-end1 (*> #'p:newline +space+ +skip-space+) #'line)
+                   offset)))
+
+#+nil
+(entry (p:in "Failed to edit: { $file }!"))
+
+(defun line (offset)
+  "A single line of a potentially multiline text group."
   (funcall (p:many1 (p:alt (p:pmap #'string->keyword
                                    (*> +brace-open+
                                        +skip-space+
@@ -78,4 +91,4 @@
            offset))
 
 #+nil
-(entry (p:in "Failed to edit: { $file }!"))
+(line (p:in "Failed to edit: { $file }!"))

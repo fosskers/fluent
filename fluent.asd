@@ -12,6 +12,6 @@
   :in-order-to ((test-op (test-op :fluent/tests))))
 
 (defsystem "fluent/tests"
-  :depends-on (:fluent :parachute)
+  :depends-on (:fluent :parcom :parachute)
   :components ((:module "tests" :components ((:file "tests"))))
   :perform (test-op (op c) (symbol-call :parachute :test :fluent/tests)))
