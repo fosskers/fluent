@@ -34,6 +34,7 @@
 (defparameter +brace-close+    (p:char #\}))
 (defparameter +dollar+         (p:char #\$))
 (defparameter +space+          (p:char #\space))
+(defparameter +quote+          (p:char #\"))
 
 #+nil
 (funcall +comment+ (p:in "# hello"))
@@ -86,6 +87,7 @@
 (defun line (offset)
   "A single line of a potentially multiline text group."
   (funcall (p:many1 (p:alt #'variable
+                           #'quoted
                            #'term
                            (p:take-while1 (lambda (c)
                                             (not (or (eql c #\newline)
@@ -118,6 +120,17 @@
                               (*> +skip-space+ +brace-close+))
                    offset)))
 
+;; NOTE: Unicode escaping is not supported. Just use the raw character itself.
+(defun quoted (offset)
+  "Parse special, quoted characters."
+  (funcall (p:between (*> +brace-open+ +skip-space+)
+                      (p:between +quote+
+                                 (p:take-while1 (lambda (c)
+                                                  (not (or (eql c #\")
+                                                           (eql c #\newline)))))
+                                 +quote+)
+                      (*> +skip-space+ +brace-close+))
+           offset))
+
 #+nil
-(defun special (offset)
-  "Parse special characters.")
+(quoted (p:in "{ \"}\" }"))

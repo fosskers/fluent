@@ -16,7 +16,8 @@
   (is equalp (f::make-term :name "foo")
       (p:parse #'f::term "{ foo }"))
   (is equalp (f::make-term :name "foo")
-      (p:parse #'f::term "{foo}")))
+      (p:parse #'f::term "{foo}"))
+  (is equal "}" (p:parse #'f::quoted "{\"}\"}")))
 
 (define-test parsing-plaintext
   :parent parsing
