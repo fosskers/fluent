@@ -101,24 +101,23 @@
 (defun variable (offset)
   "Parse a variable chunk."
   (p:fmap (lambda (s) (make-variable :name (string->keyword s)))
-          (funcall (*> +brace-open+
-                       +skip-space+
-                       +dollar+
-                       (<* (p:take-while1 (lambda (c)
-                                            (not (or (eql c #\space)
-                                                     (eql c #\})))))
-                           +skip-space+
-                           +brace-close+))
+          (funcall (p:between (*> +brace-open+ +skip-space+ +dollar+)
+                              (p:take-while1 (lambda (c)
+                                               (not (or (eql c #\space)
+                                                        (eql c #\})))))
+                              (*> +skip-space+ +brace-close+))
                    offset)))
 
 (defun term (offset)
   "Parse a single, swappable term."
   (p:fmap (lambda (s) (make-term :name s))
-          (funcall (*> +brace-open+
-                       +skip-space+
-                       (<* (p:take-while1 (lambda (c)
-                                            (not (or (eql c #\space)
-                                                     (eql c #\})))))
-                           +skip-space+
-                           +brace-close+))
+          (funcall (p:between (*> +brace-open+ +skip-space+)
+                              (p:take-while1 (lambda (c)
+                                               (not (or (eql c #\space)
+                                                        (eql c #\})))))
+                              (*> +skip-space+ +brace-close+))
                    offset)))
+
+#+nil
+(defun special (offset)
+  "Parse special characters.")
