@@ -7,6 +7,17 @@
 
 (define-test parsing)
 
+(define-test parsing-placeables
+  :parent parsing
+  (is equalp (f::make-variable :name :foo)
+      (p:parse #'f::variable "{ $foo }"))
+  (is equalp (f::make-variable :name :foo)
+      (p:parse #'f::variable "{$foo}"))
+  (is equalp (f::make-term :name "foo")
+      (p:parse #'f::term "{ foo }"))
+  (is equalp (f::make-term :name "foo")
+      (p:parse #'f::term "{foo}")))
+
 (define-test parsing-plaintext
   :parent parsing
   (is equal '("this is a" "multiline string") (p:parse #'f::entry "this is a

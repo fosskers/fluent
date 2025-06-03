@@ -14,6 +14,14 @@
 (deftype entry ()
   '(or string list))
 
+(defstruct variable
+  "An external value that we expect the user to provide at runtime."
+  (name nil :type keyword))
+
+(defstruct term
+  "A reference to another static message in the localisation."
+  (name nil :type string))
+
 ;; --- Static Parsers --- ;;
 
 (defparameter +comment+        (*> (p:char #\#) (p:consume (lambda (c) (not (eql c #\newline))))))
@@ -64,6 +72,8 @@
                 #'entry)
            offset))
 
+;; NOTE: No support for smart detection of differed indenting from line to line.
+;; All leading whitespace is stripped.
 (defun entry (offset)
   "Many lines."
   (p:fmap (lambda (lists) (apply #'append lists))
@@ -75,20 +85,40 @@
 
 (defun line (offset)
   "A single line of a potentially multiline text group."
-  (funcall (p:many1 (p:alt (p:pmap #'string->keyword
-                                   (*> +brace-open+
-                                       +skip-space+
-                                       +dollar+
-                                       (<* (p:take-while1 (lambda (c)
-                                                            (not (or (eql c #\space)
-                                                                     (eql c #\})))))
-                                           +skip-space+
-                                           +brace-close+)))
+  (funcall (p:many1 (p:alt #'variable
+                           #'term
                            (p:take-while1 (lambda (c)
                                             (not (or (eql c #\newline)
                                                      (eql c #\{)))))))
-
            offset))
 
 #+nil
 (line (p:in "Failed to edit: { $file }!"))
+
+#+nil
+(line (p:in "Placing a { term } here!"))
+
+(defun variable (offset)
+  "Parse a variable chunk."
+  (p:fmap (lambda (s) (make-variable :name (string->keyword s)))
+          (funcall (*> +brace-open+
+                       +skip-space+
+                       +dollar+
+                       (<* (p:take-while1 (lambda (c)
+                                            (not (or (eql c #\space)
+                                                     (eql c #\})))))
+                           +skip-space+
+                           +brace-close+))
+                   offset)))
+
+(defun term (offset)
+  "Parse a single, swappable term."
+  (p:fmap (lambda (s) (make-term :name s))
+          (funcall (*> +brace-open+
+                       +skip-space+
+                       (<* (p:take-while1 (lambda (c)
+                                            (not (or (eql c #\space)
+                                                     (eql c #\})))))
+                           +skip-space+
+                           +brace-close+))
+                   offset)))
