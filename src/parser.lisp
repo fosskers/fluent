@@ -5,6 +5,9 @@
 ;;;
 ;;; where the `ctx' is the entire parsed localisation context, initialized to a
 ;;; specific language.
+;;;
+;;; Out of Scope:
+;;;   - Handling country-based number formatting.
 
 (in-package :fluent)
 
@@ -21,6 +24,35 @@
 (defstruct term
   "A reference to another static message in the localisation."
   (name nil :type string))
+
+(defstruct selection
+  "Branching possibilities of a localisation depending on some input value."
+  (input    nil :type keyword)
+  (func     nil :type (or null function))
+  (branches nil :type list)
+  (default  nil :type branch))
+
+(defstruct branch
+  "A particular branch of a selection block."
+  (term nil :type (or real string plurals:category))
+  (line nil :type list))
+
+;; TODO: 2025-06-12 Move this.
+(defun resolve-branch (branch val)
+  "Replace a placeholder in a branch with its actual value."
+  (reduce (lambda (chunk acc)
+            (etypecase chunk
+              (string (cons chunk acc))
+              ;; NOTE: Might also need to check against the variable's keyword.
+              (variable (cons val acc))))
+          (branch-line branch)
+          :initial-value '()
+          :from-end t))
+
+#+nil
+(resolve-branch (make-branch :term :other
+                             :line (list "added" (make-variable :name :photocount) "new photos"))
+                5)
 
 ;; --- Static Parsers --- ;;
 
@@ -86,9 +118,7 @@
 
 (defun line (offset)
   "A single line of a potentially multiline text group."
-  (funcall (p:many1 (p:alt #'variable
-                           #'quoted
-                           #'term
+  (funcall (p:many1 (p:alt #'placeable
                            (p:take-while1 (lambda (c)
                                             (not (or (eql c #\newline)
                                                      (eql c #\{)))))))
@@ -99,6 +129,13 @@
 
 #+nil
 (line (p:in "Placing a { term } here!"))
+
+(defun placeable (offset)
+  "Something within curly braces."
+  (funcall (p:alt #'variable #'quoted #'term) offset))
+
+#+nil
+(placeable (p:in "{ $foo }"))
 
 (defun variable (offset)
   "Parse a variable chunk."

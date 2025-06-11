@@ -3,7 +3,7 @@
   :author "Colin Woodbury <colin@fosskers.ca>"
   :license "MPL-2.0"
   :homepage ""
-  :depends-on (:parcom)
+  :depends-on (:parcom :plurals)
   :serial t
   :components ((:module "src"
                 :components ((:file "package")
