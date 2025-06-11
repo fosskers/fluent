@@ -54,6 +54,25 @@
                              :line (list "added" (make-variable :name :photocount) "new photos"))
                 5)
 
+;; TODO: 2025-06-12 Move this.
+(defun resolve-selection (locale sel val)
+  (resolve-branch (find-branch locale sel val) val))
+
+(defun find-branch (locale sel val)
+  (let ((found (etypecase val
+                 (real (let* ((s   (format nil "~a" val))
+                              (cat (plurals:cardinal locale s)))
+                         (find-if (lambda (branch)
+                                    (let ((term (branch-term branch)))
+                                      (etypecase term
+                                        (real (= val term))
+                                        (plurals:category (eq cat term)))))
+                                  (selection-branches sel))))
+                 (string (find-if (lambda (branch) (equal val (branch-term branch)))
+                                  (selection-branches sel))))))
+    (cond ((not found) (selection-default sel))
+          (t found))))
+
 ;; --- Static Parsers --- ;;
 
 (defparameter +comment+        (*> (p:char #\#) (p:consume (lambda (c) (not (eql c #\newline))))))
