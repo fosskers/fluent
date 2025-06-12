@@ -34,8 +34,9 @@
 
 (defstruct branch
   "A particular branch of a selection block."
-  (term nil :type (or real string plurals:category))
-  (line nil :type list))
+  (term nil    :type (or real string plurals:category))
+  (line nil    :type list)
+  (default nil :type boolean))
 
 ;; TODO: 2025-06-12 Move this.
 (defun resolve-branch (branch val)
@@ -56,9 +57,13 @@
 
 ;; TODO: 2025-06-12 Move this.
 (defun resolve-selection (locale sel val)
+  "Choose the correct localisation line."
   (resolve-branch (find-branch locale sel val) val))
 
+;; TODO: 2025-06-12 Eventually I will have to handle functions that manipulate
+;; the input before comparing.
 (defun find-branch (locale sel val)
+  "Find a localisation branch whose condition/term matches the incoming value."
   (let ((found (etypecase val
                  (real (let* ((s   (format nil "~a" val))
                               (cat (plurals:cardinal locale s)))
@@ -73,6 +78,19 @@
     (cond ((not found) (selection-default sel))
           (t found))))
 
+#+nil
+(let ((def (make-branch :term :other
+                        :line (list "added" (make-variable :name :photocount) "new photos"))))
+  (resolve-selection
+   :en
+   (make-selection :input :photocount
+                   :func nil
+                   :branches (list (make-branch :term :one
+                                                :line (list "added a new photo"))
+                                   def)
+                   :default def)
+   1))
+
 ;; --- Static Parsers --- ;;
 
 (defparameter +comment+        (*> (p:char #\#) (p:consume (lambda (c) (not (eql c #\newline))))))
@@ -83,9 +101,12 @@
 (defparameter +equal+          (p:char #\=))
 (defparameter +brace-open+     (p:char #\{))
 (defparameter +brace-close+    (p:char #\}))
+(defparameter +bracket-open+   (p:char #\[))
+(defparameter +bracket-close+  (p:char #\]))
 (defparameter +dollar+         (p:char #\$))
 (defparameter +space+          (p:char #\space))
 (defparameter +quote+          (p:char #\"))
+(defparameter +asterisk+       (p:char #\*))
 
 #+nil
 (funcall +comment+ (p:in "# hello"))
@@ -151,7 +172,7 @@
 
 (defun placeable (offset)
   "Something within curly braces."
-  (funcall (p:alt #'variable #'quoted #'term) offset))
+  (funcall (p:alt #'variable #'quoted #'term #'selection) offset))
 
 #+nil
 (placeable (p:in "{ $foo }"))
@@ -159,10 +180,8 @@
 (defun variable (offset)
   "Parse a variable chunk."
   (p:fmap (lambda (s) (make-variable :name (string->keyword s)))
-          (funcall (p:between (*> +brace-open+ +skip-space+ +dollar+)
-                              (p:take-while1 (lambda (c)
-                                               (not (or (eql c #\space)
-                                                        (eql c #\})))))
+          (funcall (p:between (*> +brace-open+ +skip-space+)
+                              #'dollared
                               (*> +skip-space+ +brace-close+))
                    offset)))
 
@@ -190,3 +209,86 @@
 
 #+nil
 (quoted (p:in "{ \"}\" }"))
+
+(defun dollared (offset)
+  "Parse a variable name as a keyword."
+  (p:fmap #'string->keyword
+          (funcall (*> +dollar+
+                       (p:take-while1 (lambda (c)
+                                        (not (or (eql c #\space)
+                                                 (eql c #\newline)
+                                                 (eql c #\}))))))
+                   offset)))
+
+#+nil
+(p:parse #'dollared "$photoCount")
+
+(defun selection (offset)
+  "Parse a multi-condition selection block."
+  (p:fmap (lambda (list)
+            (destructuring-bind (var branches) list
+              (let ((default (find-if #'branch-default branches)))
+                (make-selection :input var
+                                :func nil
+                                :branches branches
+                                :default default))))
+          (funcall (p:between (*> +brace-open+ +skip-space+)
+                              (<*> #'dollared
+                                   (*> +skip-space+
+                                       (p:string "->")
+                                       +skip-all-space+
+                                       (p:sep-end1 +skip-all-space+ #'branch)))
+                              (*> +skip-all-space+ +brace-close+))
+                   offset)))
+
+#+nil
+(p:parse #'selection "{$photoCount ->
+  [one] added a new photo
+ *[other] added {$photoCount} new photos
+}")
+
+(defun branch (offset)
+  "Parse a single localisation choice."
+  (p:fmap (lambda (list)
+            (destructuring-bind (default selector line) list
+              (make-branch :term selector
+                           :line line
+                           :default default)))
+          (funcall (<*> (p:opt (<$ t +asterisk+))
+                        #'branch-selection-term
+                        (*> +skip-space+ #'line))
+                   offset)))
+
+#+nil
+(branch (p:in "[male] his stream"))
+#+nil
+(branch (p:in "*[other] added {$photoCount} new photos"))
+
+(defun branch-selection-term (offset)
+  "Parse a value that can appear between []."
+  (funcall (p:between +bracket-open+
+                      (p:alt (<* #'p:unsigned (p:sneak #\]))
+                             #'p:float
+                             #'category
+                             (p:take-while1 (lambda (c)
+                                              (not (or (eql c #\])
+                                                       (eql c #\newline))))))
+                      +bracket-close+)
+           offset))
+
+#+nil
+(branch-selection-term (p:in "[male] his stream"))
+#+nil
+(branch-selection-term (p:in "[one] added a new photo"))
+
+(defun category (offset)
+  (funcall (p:alt (<$ :zero  (p:string "zero"))
+                  (<$ :one   (p:string "one"))
+                  (<$ :two   (p:string "two"))
+                  (<$ :few   (p:string "few"))
+                  (<$ :many  (p:string "many"))
+                  (<$ :other (p:string "other")))
+           offset))
+
+#+nil
+(category (p:in "few"))
