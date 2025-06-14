@@ -17,7 +17,8 @@
       (p:parse #'f::term "{ foo }"))
   (is equalp (f::make-term :name "foo")
       (p:parse #'f::term "{foo}"))
-  (is equal "}" (p:parse #'f::quoted "{\"}\"}")))
+  (is equal "}" (p:parse #'f::quoted "{\"}\"}"))
+  (finish (p:parse #'f::placeable "{ NUMBER($ratio, minimumFractionDigits: 2) }")))
 
 (define-test parsing-plaintext
   :parent parsing
@@ -35,6 +36,10 @@
   an extra
 
   blank line!")))
+
+(define-test parsing-pairs
+  :parent parsing
+  (finish (p:parse (p:<* #'f::pair #'p:eof) "dpi-ratio = Your DPI ratio is { NUMBER($ratio, minimumFractionDigits: 2)}")))
 
 (define-test parsing-files
   :parent parsing

@@ -178,6 +178,9 @@
                 #'entry)
            offset))
 
+#+nil
+(p:parse #'pair "dpi-ratio = Your DPI ratio is { NUMBER($ratio, minimumFractionDigits: 2)}")
+
 ;; NOTE: No support for smart detection of differed indenting from line to line.
 ;; All leading whitespace is stripped.
 (defun entry (offset)
@@ -205,7 +208,7 @@
 
 (defun placeable (offset)
   "Something within curly braces."
-  (funcall (p:alt #'variable #'quoted #'term #'selection) offset))
+  (funcall (p:alt #'variable #'quoted #'term #'funky #'selection) offset))
 
 #+nil
 (placeable (p:in "{ $foo }"))
@@ -256,6 +259,16 @@
 
 #+nil
 (p:parse #'dollared "$photoCount")
+
+(defun funky (offset)
+  "Parse a function call placeable."
+  (funcall (p:between (*> +brace-open+ +skip-space+)
+                      #'func
+                      (*> +skip-space+ +brace-close+))
+           offset))
+
+#+nil
+(p:parse #'funky "{ NUMBER($ratio, minimumFractionDigits: 2) }")
 
 (defun selection (offset)
   "Parse a multi-condition selection block."
@@ -355,9 +368,6 @@
 
 #+nil
 (p:parse #'number "NUMBER($ratio, minimumFractionDigits: 2)")
-
-;; TODO: 2025-06-13 Add a resolver for these number functions next. It's fine to
-;; do it in "interpretted" style, you don't need to embed lambdas.
 
 (defun number-option (offset)
   (funcall (<*> (p:alt (<$ :min-frac (p:string "minimumFractionDigits"))
