@@ -54,8 +54,8 @@
   (is eq :other (p:parse #'f::category "other"))
   (is eq :few (p:parse #'f::branch-selection-term "[few]"))
   (is equal "male" (p:parse #'f::branch-selection-term "[male]"))
-  (is = 1 (p:parse #'f::branch-selection-term "[1]"))
-  (is = 1.0 (p:parse #'f::branch-selection-term "[1.0]")))
+  (is equal "1" (p:parse #'f::branch-selection-term "[1]"))
+  (is equal "1.0" (p:parse #'f::branch-selection-term "[1.0]")))
 
 (define-test parsing-selections
   :parent parsing
@@ -63,7 +63,6 @@
                               :line (list "added " (f::make-variable :name :photocount) " new photos")
                               :default t))
          (sel (f::make-selection :input :photocount
-                                 :func nil
                                  :branches (list (f::make-branch :term :one
                                                                  :line (list "added a new photo")
                                                                  :default nil)

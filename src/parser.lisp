@@ -57,27 +57,28 @@
 (defstruct selection
   "Branching possibilities of a localisation depending on some input value."
   (input    nil :type (or keyword numberf))
-  (func     nil :type (or null function))
   (branches nil :type list)
   (default  nil :type branch))
 
 (defstruct branch
   "A particular branch of a selection block."
-  (term    nil :type (or real string plurals:category))
+  (term    nil :type (or string plurals:category))
   (line    nil :type list)
   (default nil :type boolean))
 
 ;; TODO: 2025-06-12 Move this.
 (defun resolve-branch (branch val)
   "Replace a placeholder in a branch with its actual value."
-  (reduce (lambda (chunk acc)
-            (etypecase chunk
-              (string (cons chunk acc))
-              ;; NOTE: Might also need to check against the variable's keyword.
-              (variable (cons val acc))))
-          (branch-line branch)
-          :initial-value '()
-          :from-end t))
+  (format nil "~{~a~}"
+          (reduce (lambda (chunk acc)
+                    (etypecase chunk
+                      (string (cons chunk acc))
+                      ;; NOTE: Might also need to check against the variable's keyword.
+                      (variable (cons val acc))
+                      (numberf (cons (resolve-number chunk val) acc))))
+                  (branch-line branch)
+                  :initial-value '()
+                  :from-end t)))
 
 #+nil
 (resolve-branch (make-branch :term :other
@@ -89,18 +90,19 @@
   "Choose the correct localisation line."
   (resolve-branch (find-branch locale sel val) val))
 
-;; TODO: 2025-06-12 Eventually I will have to handle functions that manipulate
-;; the input before comparing.
 (defun find-branch (locale sel val)
   "Find a localisation branch whose condition/term matches the incoming value."
   (let ((found (etypecase val
-                 (real (let* ((s   (format nil "~a" val))
+                 (real (let* ((inp (selection-input sel))
+                              (s (etypecase inp
+                                   (keyword (format nil "~a" val))
+                                   (numberf (resolve-number inp val))))
                               (cat (plurals:cardinal locale s)))
                          (find-if (lambda (branch)
                                     (let ((term (branch-term branch)))
                                       (etypecase term
-                                        (real (= val term))
-                                        (plurals:category (eq cat term)))))
+                                        (plurals:category (eq cat term))
+                                        (t (equal s term)))))
                                   (selection-branches sel))))
                  (string (find-if (lambda (branch) (equal val (branch-term branch)))
                                   (selection-branches sel))))))
@@ -113,20 +115,18 @@
   (resolve-selection
    :en
    (make-selection :input :photocount
-                   :func nil
                    :branches (list (make-branch :term :one
                                                 :line (list "added a new photo"))
                                    def)
                    :default def)
    1))
 
-;; TODO: try to resolve this
-
 #+nil
-(p:parse #'selection "{ NUMBER($score, minimumFractionDigits: 1) ->
+(let ((sel (p:parse #'selection "{ NUMBER($score, minimumFractionDigits: 1) ->
         [0.0]   You scored zero points. What happened?
        *[other] You scored { NUMBER($score, minimumFractionDigits: 1) } points.
-}")
+}")))
+  (resolve-selection :en sel 1))
 
 ;; --- Static Parsers --- ;;
 
@@ -284,7 +284,6 @@
             (destructuring-bind (var branches) list
               (let ((default (find-if #'branch-default branches)))
                 (make-selection :input var
-                                :func nil
                                 :branches branches
                                 :default default))))
           (funcall (p:between (*> +brace-open+ +skip-space+)
@@ -322,9 +321,7 @@
 (defun branch-selection-term (offset)
   "Parse a value that can appear between []."
   (funcall (p:between +bracket-open+
-                      (p:alt (<* #'p:unsigned (p:sneak #\]))
-                             #'p:float
-                             #'category
+                      (p:alt #'category
                              (p:take-while1 (lambda (c)
                                               (not (or (eql c #\])
                                                        (eql c #\newline))))))
