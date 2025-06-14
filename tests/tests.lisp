@@ -68,3 +68,19 @@
   [one] added a new photo
  *[other] added {$photoCount} new photos
 }"))))
+
+(define-test functions)
+
+(define-test number
+  :parent functions
+  (is equal "1" (f::resolve-number (f::make-numberf :input :foo :min-frac 0) 1))
+  (is equal "1.0" (f::resolve-number (f::make-numberf :input :foo :min-frac 0) 1.0))
+  (is equal "1.123" (f::resolve-number (f::make-numberf :input :foo :min-frac 0) 1.123))
+  (is equal "1.000" (f::resolve-number (f::make-numberf :input :foo :min-frac 3) 1))
+  (is equal "1.000" (f::resolve-number (f::make-numberf :input :foo :min-frac 3) 1.0))
+  (is equal "1.123" (f::resolve-number (f::make-numberf :input :foo :min-frac 2) 1.123))
+  (is equal "1" (f::resolve-number (f::make-numberf :input :foo :max-frac 0) 1))
+  (is equal "1" (f::resolve-number (f::make-numberf :input :foo :max-frac 0) 1.0))
+  (is equal "1.0" (f::resolve-number (f::make-numberf :input :foo :max-frac 1) 1.02))
+  (is equal "1.02" (f::resolve-number (f::make-numberf :input :foo :max-frac 2) 1.02))
+  (is equal "1.02" (f::resolve-number (f::make-numberf :input :foo :max-frac 2) 1.023)))

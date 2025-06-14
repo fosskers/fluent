@@ -1,6 +1,6 @@
 (defpackage fluent
   (:use :cl)
-  (:shadow #:variable)
+  (:shadow #:variable #:number)
   (:import-from :parcom #:<*> #:<* #:*> #:<$)
   (:local-nicknames (#:p #:parcom))
   (:export #:parse)

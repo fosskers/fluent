@@ -25,6 +25,35 @@
   "A reference to another static message in the localisation."
   (name nil :type string))
 
+(defstruct numberf
+  "The NUMBER function."
+  (input    nil :type keyword)
+  (min-frac nil :type (or null fixnum))
+  (max-frac nil :type (or null fixnum)))
+
+(declaim (ftype (function (numberf real) string) resolve-number))
+(defun resolve-number (f n)
+  "Evaluate a NUMBER function."
+  (let ((min (numberf-min-frac f))
+        (max (numberf-max-frac f)))
+    (cond (min (cond ((zerop min) (format nil "~a" n))
+                     (t (multiple-value-bind (_ rem) (floor n)
+                          (declare (ignore _))
+                          (multiple-value-bind (_ rem) (floor (* rem 10 min))
+                            (declare (ignore _))
+                            (cond ((> rem 0) (format nil "~f" n))
+                                  (t (format nil "~,vf" min n))))))))
+          (max (multiple-value-bind (int rem) (floor n)
+                 (cond ((zerop max) (format nil "~d" int))
+                       (t (multiple-value-bind (_ rem) (floor (* rem 10 max))
+                            (declare (ignore _))
+                            (cond ((> rem 0) (format nil "~,vf" max n))
+                                  (t (format nil "~f" n))))))))
+          (t (format nil "~f" n)))))
+
+#+nil
+(resolve-number (make-numberf :input :foo :max-frac 2) 1.123)
+
 (defstruct selection
   "Branching possibilities of a localisation depending on some input value."
   (input    nil :type keyword)
@@ -34,8 +63,8 @@
 
 (defstruct branch
   "A particular branch of a selection block."
-  (term nil    :type (or real string plurals:category))
-  (line nil    :type list)
+  (term    nil :type (or real string plurals:category))
+  (line    nil :type list)
   (default nil :type boolean))
 
 ;; TODO: 2025-06-12 Move this.
@@ -103,10 +132,14 @@
 (defparameter +brace-close+    (p:char #\}))
 (defparameter +bracket-open+   (p:char #\[))
 (defparameter +bracket-close+  (p:char #\]))
+(defparameter +paren-open+     (p:char #\())
+(defparameter +paren-close+    (p:char #\)))
 (defparameter +dollar+         (p:char #\$))
 (defparameter +space+          (p:char #\space))
 (defparameter +quote+          (p:char #\"))
 (defparameter +asterisk+       (p:char #\*))
+(defparameter +comma+          (p:char #\,))
+(defparameter +colon+          (p:char #\:))
 
 #+nil
 (funcall +comment+ (p:in "# hello"))
@@ -217,7 +250,8 @@
                        (p:take-while1 (lambda (c)
                                         (not (or (eql c #\space)
                                                  (eql c #\newline)
-                                                 (eql c #\}))))))
+                                                 (eql c #\})
+                                                 (eql c #\,))))))
                    offset)))
 
 #+nil
@@ -292,3 +326,46 @@
 
 #+nil
 (category (p:in "few"))
+
+(defun func (offset)
+  ;; TODO: 2025-06-13 Eventually add DATETIME.
+  (funcall #'number offset))
+
+;; NOTE: 2025-06-13 For me at this moment, supporting all the formatting options
+;; for every language is out of scope. I will start with English defaults and
+;; add extra support, piecemeal, as localisations are added to downstream
+;; programs.
+;;
+;; Further, at the moment, only certain formatting options are available as
+;; match my immediate needs.
+(defun number (offset)
+  (p:fmap (lambda (list)
+            (destructuring-bind (input (op val)) list
+              (case op
+                (:min-frac (make-numberf :input input :min-frac val))
+                (:max-frac (make-numberf :input input :max-frac val)))))
+          (funcall (*> (p:string "NUMBER")
+                       (p:between +paren-open+
+                                  (<*> #'dollared
+                                       (p:opt (*> +comma+
+                                                  +skip-space+
+                                                  #'number-option)))
+                                  +paren-close+))
+                   offset)))
+
+#+nil
+(p:parse #'number "NUMBER($ratio, minimumFractionDigits: 2)")
+
+;; TODO: 2025-06-13 Add a resolver for these number functions next. It's fine to
+;; do it in "interpretted" style, you don't need to embed lambdas.
+
+(defun number-option (offset)
+  (funcall (<*> (p:alt (<$ :min-frac (p:string "minimumFractionDigits"))
+                       (<$ :max-frac (p:string "maximumFractionDigits")))
+                (*> +colon+
+                    +skip-space+
+                    #'p:unsigned))
+           offset))
+
+#+nil
+(p:parse #'number-option "minimumFractionDigits: 2")
