@@ -72,7 +72,11 @@
     (is equalp sel (p:parse #'f::selection "{$photoCount ->
   [one] added a new photo
  *[other] added {$photoCount} new photos
-}"))))
+}")))
+  (finish (p:parse (p:<* #'f::selection #'p:eof) "{ NUMBER($score, minimumFractionDigits: 1) ->
+        [0.0]   You scored zero points. What happened?
+       *[other] You scored { NUMBER($score, minimumFractionDigits: 1) } points.
+    }")))
 
 (define-test functions)
 

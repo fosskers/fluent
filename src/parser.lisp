@@ -56,7 +56,7 @@
 
 (defstruct selection
   "Branching possibilities of a localisation depending on some input value."
-  (input    nil :type keyword)
+  (input    nil :type (or keyword numberf))
   (func     nil :type (or null function))
   (branches nil :type list)
   (default  nil :type branch))
@@ -119,6 +119,14 @@
                                    def)
                    :default def)
    1))
+
+;; TODO: try to resolve this
+
+#+nil
+(p:parse #'selection "{ NUMBER($score, minimumFractionDigits: 1) ->
+        [0.0]   You scored zero points. What happened?
+       *[other] You scored { NUMBER($score, minimumFractionDigits: 1) } points.
+}")
 
 ;; --- Static Parsers --- ;;
 
@@ -280,7 +288,7 @@
                                 :branches branches
                                 :default default))))
           (funcall (p:between (*> +brace-open+ +skip-space+)
-                              (<*> #'dollared
+                              (<*> (p:alt #'dollared #'func)
                                    (*> +skip-space+
                                        (p:string "->")
                                        +skip-all-space+
