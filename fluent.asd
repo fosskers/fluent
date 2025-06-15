@@ -2,11 +2,13 @@
   :version "0.0.0"
   :author "Colin Woodbury <colin@fosskers.ca>"
   :license "MPL-2.0"
-  :homepage ""
+  :homepage "https://github.com/fosskers/fluent"
   :depends-on (:parcom :plurals)
   :serial t
   :components ((:module "src"
                 :components ((:file "package")
+                             (:file "types")
+                             (:file "resolution")
                              (:file "parser"))))
   :description "Software localisation via Mozilla's Project Fluent."
   :in-order-to ((test-op (test-op :fluent/tests))))
