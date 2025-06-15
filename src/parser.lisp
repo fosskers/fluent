@@ -29,7 +29,8 @@
   "The NUMBER function."
   (input    nil :type keyword)
   (min-frac nil :type (or null fixnum))
-  (max-frac nil :type (or null fixnum)))
+  (max-frac nil :type (or null fixnum))
+  (type     :cardinal :type keyword))
 
 (declaim (ftype (function (numberf real) string) resolve-number))
 (defun resolve-number (f n)
@@ -49,7 +50,7 @@
                             (declare (ignore _))
                             (cond ((> rem 0) (format nil "~,vf" max n))
                                   (t (format nil "~f" n))))))))
-          (t (format nil "~f" n)))))
+          (t (format nil "~a" n)))))
 
 #+nil
 (resolve-number (make-numberf :input :foo :max-frac 2) 1.123)
@@ -97,7 +98,10 @@
                               (s (etypecase inp
                                    (keyword (format nil "~a" val))
                                    (numberf (resolve-number inp val))))
-                              (cat (plurals:cardinal locale s)))
+                              (cat (cond ((and (numberf-p inp)
+                                               (eq :ordinal (numberf-type inp)))
+                                          (plurals:ordinal locale s))
+                                         (t (plurals:cardinal locale s)))))
                          (find-if (lambda (branch)
                                     (let ((term (branch-term branch)))
                                       (etypecase term
@@ -110,21 +114,19 @@
           (t found))))
 
 #+nil
-(let ((def (make-branch :term :other
-                        :line (list "added" (make-variable :name :photocount) "new photos"))))
-  (resolve-selection
-   :en
-   (make-selection :input :photocount
-                   :branches (list (make-branch :term :one
-                                                :line (list "added a new photo"))
-                                   def)
-                   :default def)
-   1))
-
-#+nil
 (let ((sel (p:parse #'selection "{ NUMBER($score, minimumFractionDigits: 1) ->
         [0.0]   You scored zero points. What happened?
        *[other] You scored { NUMBER($score, minimumFractionDigits: 1) } points.
+}")))
+  (resolve-selection :en sel 1))
+
+#+nil
+(let ((sel (p:parse #'selection "{ NUMBER($pos, type: \"ordinal\") ->
+   [1] You finished first!
+   [one] You finished {$pos}st
+   [two] You finished {$pos}nd
+   [few] You finished {$pos}rd
+  *[other] You finished {$pos}th
 }")))
   (resolve-selection :en sel 1))
 
@@ -361,7 +363,8 @@
             (destructuring-bind (input (op val)) list
               (case op
                 (:min-frac (make-numberf :input input :min-frac val))
-                (:max-frac (make-numberf :input input :max-frac val)))))
+                (:max-frac (make-numberf :input input :max-frac val))
+                (:type     (make-numberf :input input :type val)))))
           (funcall (*> (p:string "NUMBER")
                        (p:between +paren-open+
                                   (<*> #'dollared
@@ -373,14 +376,38 @@
 
 #+nil
 (p:parse #'number "NUMBER($ratio, minimumFractionDigits: 2)")
+#+nil
+(p:parse #'number "NUMBER($ratio, type: \"ordinal\")")
 
 (defun number-option (offset)
-  (funcall (<*> (p:alt (<$ :min-frac (p:string "minimumFractionDigits"))
-                       (<$ :max-frac (p:string "maximumFractionDigits")))
-                (*> +colon+
-                    +skip-space+
-                    #'p:unsigned))
-           offset))
+  (funcall (p:alt #'min-frac #'max-frac #'plural-type) offset))
 
 #+nil
 (p:parse #'number-option "minimumFractionDigits: 2")
+
+(defun min-frac (offset)
+  (p:fmap (lambda (n) (list :min-frac n))
+          (funcall (*> (p:string "minimumFractionDigits")
+                       +colon+
+                       +skip-space+
+                       #'p:unsigned)
+                   offset)))
+
+(defun max-frac (offset)
+  (p:fmap (lambda (n) (list :max-frac n))
+          (funcall (*> (p:string "maximumFractionDigits")
+                       +colon+
+                       +skip-space+
+                       #'p:unsigned)
+                   offset)))
+
+(defun plural-type (offset)
+  (p:fmap (lambda (kw) (list :type kw))
+          (funcall (*> (p:string "type")
+                       +colon+
+                       +skip-space+
+                       (p:between +quote+
+                                  (p:alt (<$ :ordinal (p:string "ordinal"))
+                                         (<$ :cardinal (p:string "cardinal")))
+                                  +quote+))
+                   offset)))

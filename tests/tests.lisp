@@ -75,7 +75,16 @@
   (finish (p:parse (p:<* #'f::selection #'p:eof) "{ NUMBER($score, minimumFractionDigits: 1) ->
         [0.0]   You scored zero points. What happened?
        *[other] You scored { NUMBER($score, minimumFractionDigits: 1) } points.
-    }")))
+    }"))
+  (let ((sel (p:parse (p:<* #'f::selection #'p:eof) "{ NUMBER($pos, type: \"ordinal\") ->
+   [1] You finished first!
+   [one] You finished {$pos}st
+   [two] You finished {$pos}nd
+   [few] You finished {$pos}rd
+  *[other] You finished {$pos}th
+}")))
+    (is equal "You finished first!" (f::resolve-selection :en sel 1))
+    (is equal "You finished 2nd" (f::resolve-selection :en sel 2))))
 
 (define-test functions)
 
