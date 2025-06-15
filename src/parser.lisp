@@ -19,6 +19,7 @@
 (defparameter +skip-comments+  (p:skip (*> +comment+ +skip-all-space+)))
 (defparameter +skip-junk+      (*> +skip-all-space+ +skip-comments+))
 (defparameter +equal+          (p:char #\=))
+(defparameter +dash+           (p:char #\-))
 (defparameter +brace-open+     (p:char #\{))
 (defparameter +brace-close+    (p:char #\}))
 (defparameter +bracket-open+   (p:char #\[))
@@ -40,10 +41,14 @@
                             (<* (p:sep-end1 +skip-junk+ #'pair)
                                 #'p:eof))
                         s))
-        (ht (make-hash-table :test #'equal :size 64)))
+        (terms (make-hash-table :test #'equal :size 16))
+        (lines (make-hash-table :test #'equal :size 64)))
     (dolist (pair pairs)
-      (setf (gethash (car pair) ht) (cadr pair)))
-    ht))
+      (destructuring-bind ((type name) line) pair
+        (case type
+          (:term (setf (gethash name terms) line))
+          (:line (setf (gethash name lines) line)))))
+    (make-localisations :terms terms :lines lines)))
 
 #+nil
 (parse "language-name = English")
@@ -57,7 +62,7 @@
 ;; soon as possible and with as few losses as possible."
 (defun pair (offset)
   "A single localisation pair."
-  (funcall (<*> (<* (p:take-while1 (lambda (c) (not (eql c #\space))))
+  (funcall (<*> (<* #'key
                     +skip-space+
                     +equal+
                     +skip-all-space+)
@@ -66,6 +71,23 @@
 
 #+nil
 (p:parse #'pair "dpi-ratio = Your DPI ratio is { NUMBER($ratio, minimumFractionDigits: 2)}")
+#+nil
+(p:parse #'pair "about = About { -brand-name }.")
+
+(defun key (offset)
+  "Either a term key or a normal line key."
+  (p:fmap (lambda (list)
+            (destructuring-bind (dash? name) list
+              (cond (dash? (list :term name))
+                    (t (list :line name)))))
+          (funcall (<*> (p:opt +dash+)
+                        (p:take-while1 (lambda (c) (not (eql c #\space)))))
+                   offset)))
+
+#+nil
+(p:parse #'key "-brand")
+#+nil
+(p:parse #'key "about")
 
 ;; NOTE: No support for smart detection of differed indenting from line to line.
 ;; All leading whitespace is stripped.

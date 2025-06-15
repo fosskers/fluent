@@ -28,3 +28,10 @@
   (term    nil :type (or string plurals:category))
   (line    nil :type list)
   (default nil :type boolean))
+
+(defstruct localisations
+  "A unified body of all necessary localisation lines. In the case where the chosen
+body of localisations were missing some messages, these are filled in by the
+Fallback Language."
+  (terms  nil :type hash-table)
+  (lines  nil :type hash-table))
