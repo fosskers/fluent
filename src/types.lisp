@@ -8,13 +8,16 @@
 
 (defstruct term
   "A reference to another static message in the localisation."
-  (name nil :type string))
+  (name nil :type string)
+  (arg  nil :type (or null keyword))
+  (val  nil :type (or null string)))
 
 (defstruct numberf
   "The NUMBER function."
   (input    nil :type keyword)
   (min-frac nil :type (or null fixnum))
   (max-frac nil :type (or null fixnum))
+  ;; `:ordinal' is opt-in due to being a somewhat rare choice.
   (type     :cardinal :type keyword))
 
 (defstruct selection
@@ -33,5 +36,5 @@
   "A unified body of all necessary localisation lines. In the case where the chosen
 body of localisations were missing some messages, these are filled in by the
 Fallback Language."
-  (terms  nil :type hash-table)
-  (lines  nil :type hash-table))
+  (terms nil :type hash-table)
+  (lines nil :type hash-table))

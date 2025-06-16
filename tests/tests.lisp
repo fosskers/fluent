@@ -14,11 +14,12 @@
   (is equalp (f::make-variable :name :foo)
       (p:parse #'f::variable "{$foo}"))
   (is equalp (f::make-term :name "foo")
-      (p:parse #'f::term "{ foo }"))
+      (p:parse #'f::term "{ -foo }"))
   (is equalp (f::make-term :name "foo")
-      (p:parse #'f::term "{foo}"))
+      (p:parse #'f::term "{-foo}"))
   (is equal "}" (p:parse #'f::quoted "{\"}\"}"))
-  (finish (p:parse #'f::placeable "{ NUMBER($ratio, minimumFractionDigits: 2) }")))
+  (finish (p:parse #'f::placeable "{ NUMBER($ratio, minimumFractionDigits: 2) }"))
+  (finish (p:parse (p:<* #'f::term #'p:eof) "{ -https(host: \"example.com\") }")))
 
 (define-test parsing-plaintext
   :parent parsing
@@ -108,4 +109,10 @@
     (is equal "You finished 2nd" (f::resolve-selection :en sel 2))))
 
 (define-test terms
-  :parent resolution)
+  :parent resolution
+  (let ((terms (f::localisations-terms (f:parse "-brand-name = Firefox")))
+        (line  (p:parse #'f::entry "About { -brand-name }.")))
+    (is equal "About Firefox." (f::resolve-line terms line '())))
+  (let ((terms (f::localisations-terms (f:parse "-https = https://{ $host }")))
+        (line  (p:parse (p:<* #'f::entry #'p:eof) "Visit { -https(host: \"example.com\") } for more info.")))
+    (is equal "Visit https://example.com for more info." (f::resolve-line terms line '()))))

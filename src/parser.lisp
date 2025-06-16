@@ -131,13 +131,46 @@
 
 (defun term (offset)
   "Parse a single, swappable term."
-  (p:fmap (lambda (s) (make-term :name s))
-          (funcall (p:between (*> +brace-open+ +skip-space+)
-                              (p:take-while1 (lambda (c)
-                                               (not (or (eql c #\space)
-                                                        (eql c #\})))))
+  (p:fmap (lambda (list)
+            (destructuring-bind (name args) list
+              (cond ((not args) (make-term :name name))
+                    (t (destructuring-bind (arg val) args
+                         (make-term :name name
+                                    :arg (string->keyword arg)
+                                    :val val))))))
+          (funcall (p:between (*> +brace-open+ +skip-space+ +dash+)
+                              (<*> (p:take-while1 (lambda (c)
+                                                    (not (or (eql c #\space)
+                                                             (eql c #\newline)
+                                                             (eql c #\})
+                                                             (eql c #\()))))
+                                   (p:opt (p:between +paren-open+
+                                                     (<*> (p:take-while1 (lambda (c)
+                                                                           (not (or (eql c #\space)
+                                                                                    (eql c #\newline)
+                                                                                    (eql c #\:)))))
+                                                          (*> +colon+
+                                                              +skip-space+
+                                                              #'quoted-string))
+                                                     +paren-close+)))
                               (*> +skip-space+ +brace-close+))
                    offset)))
+
+#+nil
+(p:parse #'term "{ -brand-name }")
+#+nil
+(p:parse #'term "{ -https(host: \"example.com\") }")
+
+(defun quoted-string (offset)
+  (funcall (p:between +quote+
+                      (p:take-while1 (lambda (c)
+                                       (not (or (eql c #\newline)
+                                                (eql c #\")))))
+                      +quote+)
+           offset))
+
+#+nil
+(p:parse #'quoted-string "\"hello\"")
 
 ;; NOTE: Unicode escaping is not supported. Just use the raw character itself.
 (defun quoted (offset)
