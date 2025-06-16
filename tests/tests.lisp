@@ -105,14 +105,21 @@
    [few] You finished {$pos}rd
   *[other] You finished {$pos}th
 }")))
-    (is equal "You finished first!" (f::resolve-selection :en sel 1))
-    (is equal "You finished 2nd" (f::resolve-selection :en sel 2))))
+    (is equal "You finished first!" (f::resolve-selection :en (make-hash-table) sel '(:pos 1)))
+    (is equal "You finished 2nd" (f::resolve-selection :en (make-hash-table) sel '(:pos 2)))))
 
 (define-test terms
   :parent resolution
   (let ((terms (f::localisations-terms (f:parse "-brand-name = Firefox")))
         (line  (p:parse #'f::entry "About { -brand-name }.")))
-    (is equal "About Firefox." (f::resolve-line terms line '())))
+    (is equal "About Firefox." (f::resolve-line :en terms line '())))
   (let ((terms (f::localisations-terms (f:parse "-https = https://{ $host }")))
         (line  (p:parse (p:<* #'f::entry #'p:eof) "Visit { -https(host: \"example.com\") } for more info.")))
-    (is equal "Visit https://example.com for more info." (f::resolve-line terms line '()))))
+    (is equal "Visit https://example.com for more info." (f::resolve-line :en terms line '())))
+  (let ((terms (f::localisations-terms (f:parse "-brand-name =
+    { $case ->
+       *[nominative] Firefox
+        [locative] Firefoksie
+    }")))
+        (line  (p:parse (p:<* #'f::entry #'p:eof) "Informacje o { -brand-name(case: \"locative\") }")))
+    (is equal "Informacje o Firefoksie" (f::resolve-line :en terms line '()))))
