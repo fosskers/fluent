@@ -73,15 +73,6 @@
       (line (p:parse (<* #'entry #'p:eof) "Visit { -https(host: \"example.com\") } for more information.")))
   (resolve-line :en terms line '()))
 
-#+nil
-(let ((terms (localisations-terms (parse "-brand-name =
-    { $case ->
-       *[nominative] Firefox
-        [locative] Firefoksie
-    }")))
-      (line  (p:parse (p:<* #'entry #'p:eof) "Informacje o { -brand-name(case: \"locative\") }")))
-  (resolve-line :en terms line '()))
-
 (defun resolve-selection (locale terms sel inputs)
   "Choose the correct localisation line and resolve it."
   (let* ((in   (selection-input sel))
@@ -109,7 +100,15 @@
                                         (t (equal s term)))))
                                   (selection-branches sel))))
                  (string (find-if (lambda (branch) (equal val (branch-term branch)))
-                                  (selection-branches sel))))))
+                                  (selection-branches sel)))
+                 ;; For when a usually "parameterized term" actually had no
+                 ;; associated argument, and so there is actually no value for
+                 ;; each branch selector to compare against.
+                 ;;
+                 ;; There are potentially other ways a nil could find its way
+                 ;; down here, but I still want to keep this as an `etypecase'
+                 ;; to avoid other type-related surprises.
+                 (null nil))))
     (cond ((not found) (selection-default sel))
           (t found))))
 

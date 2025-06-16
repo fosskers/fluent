@@ -121,5 +121,7 @@
        *[nominative] Firefox
         [locative] Firefoksie
     }")))
-        (line  (p:parse (p:<* #'f::entry #'p:eof) "Informacje o { -brand-name(case: \"locative\") }")))
-    (is equal "Informacje o Firefoksie" (f::resolve-line :en terms line '()))))
+        (line0 (p:parse (p:<* #'f::entry #'p:eof) "Informacje o { -brand-name(case: \"locative\") }"))
+        (line1 (p:parse (p:<* #'f::entry #'p:eof) "{ -brand-name } został pomyślnie zaktualizowany.")))
+    (is equal "Informacje o Firefoksie" (f::resolve-line :en terms line0 '()))
+    (is equal "Firefox został pomyślnie zaktualizowany." (f::resolve-line :en terms line1 '()))))
