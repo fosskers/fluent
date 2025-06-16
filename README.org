@@ -1,0 +1,34 @@
+#+title: Fluent
+
+This is a Common Lisp implementation of [[https://projectfluent.org/][Fluent]], a modern localisation system.
+
+See also Fluent's [[https://projectfluent.org/fluent/guide/index.html][Syntax Guide]].
+
+* Table of Contents :TOC_5_gh:noexport:
+- [[#usage][Usage]]
+- [[#limitations][Limitations]]
+
+* Usage
+
+TODO
+
+* Limitations
+
+- Gap lines in multiline text are not supported.
+- Preservation of clever indenting in multiline text is not supported.
+- For the =NUMBER= function, only the =minimumFractionDigits=,
+  =maximumFractionDigits=, and =type= arguments are supported.
+- The =DATETIME= function has not been implementation.
+- Attributes are not available, so the following is not possible:
+
+#+begin_example
+-brand-name = Aurora
+    .gender = feminine
+
+update-successful =
+    { -brand-name.gender ->
+        [masculine] { -brand-name } został zaktualizowany.
+        [feminine] { -brand-name } została zaktualizowana.
+       *[other] Program { -brand-name } został zaktualizowany.
+    }
+#+end_example
