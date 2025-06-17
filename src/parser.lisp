@@ -36,7 +36,7 @@
 ;; --- Entry --- ;;
 
 (defun parse (s)
-  "Parse a given string into a Hash Table of localisations."
+  "Parse a given string into a collated set of localisations."
   (let ((pairs (p:parse (*> +skip-junk+
                             (<* (p:sep-end1 +skip-junk+ #'pair)
                                 #'p:eof))

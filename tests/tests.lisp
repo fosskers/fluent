@@ -46,8 +46,14 @@
   :parent parsing
   (let ((s (uiop:read-file-string #p"tests/data/basic.ftl")))
     (finish (f:parse s)))
-  (let ((s (uiop:read-file-string #p"tests/data/aura.ftl")))
-    (finish (f:parse s))))
+  (let* ((s (uiop:read-file-string #p"tests/data/aura.ftl"))
+         (l (f:parse s)))
+    (is equal "Validating your system." (f:resolve l "check-start"))
+    (fail (f:resolve l "check-env-exec"))
+    (is equal "emacs installed and executable?" (f:resolve l "check-env-exec" :exec "emacs"))
+    (is equal "Fix: Update your foo.ftl to include Spanish." (f:resolve l "check-env-lang-fix" :file "foo.ftl" :lang "Spanish"))
+    (is equal "pacman.conf is older than its .pacnew by 1 day." (f:resolve l "check-pconf-pacnew-old" :path "pacman.conf" :days 1))
+    (is equal "pacman.conf is older than its .pacnew by 27 days." (f:resolve l "check-pconf-pacnew-old" :path "pacman.conf" :days 27))))
 
 (define-test parsing-minor-things
   :parent parsing

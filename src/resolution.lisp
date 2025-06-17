@@ -2,6 +2,18 @@
 
 (in-package :fluent)
 
+#+nil
+(let* ((s (uiop:read-file-string "tests/data/aura.ftl"))
+       (l (parse s)))
+  (resolve l "check-pconf-pacnew-old" :path "pacman.conf" :days 1))
+
+(defun resolve (ctx tag &rest inputs)
+  "Find a localisation line by name and fully resolve it via some input args."
+  (resolve-line (localisations-locale ctx)
+                (localisations-terms ctx)
+                (gethash tag (localisations-lines ctx))
+                inputs))
+
 (declaim (ftype (function (numberf real) string) resolve-number))
 (defun resolve-number (f n)
   "Evaluate a NUMBER function."
@@ -25,24 +37,6 @@
 #+nil
 (resolve-number (make-numberf :input :foo :max-frac 2) 1.123)
 
-(defun resolve-branch (branch val)
-  "Replace a placeholder in a branch with its actual value."
-  (format nil "~{~a~}"
-          (reduce (lambda (chunk acc)
-                    (etypecase chunk
-                      (string (cons chunk acc))
-                      ;; NOTE: Might also need to check against the variable's keyword.
-                      (variable (cons val acc))
-                      (numberf (cons (resolve-number chunk val) acc))))
-                  (branch-line branch)
-                  :initial-value '()
-                  :from-end t)))
-
-#+nil
-(resolve-branch (make-branch :term :other
-                             :line (list "added" (make-variable :name :photocount) "new photos"))
-                5)
-
 (defun resolve-line (locale terms line inputs)
   "Completely resolve some localisation line into a single string."
   (format nil "~{~a~}"
@@ -50,13 +44,13 @@
            (lambda (chunk acc)
              (let ((next (etypecase chunk
                            (string chunk)
-                           (variable (getf inputs (variable-name chunk)))
+                           (variable (get-input inputs (variable-name chunk)))
                            ;; Since the term line itself can contains inputs, we
                            ;; need to recursively resolve.
                            (term (let ((ins (cond ((not (term-arg chunk)) '())
                                                   (t (list (term-arg chunk) (term-val chunk))))))
                                    (resolve-line locale terms (gethash (term-name chunk) terms) ins)))
-                           (numberf (resolve-number chunk (getf inputs (numberf-input chunk))))
+                           (numberf (resolve-number chunk (get-input inputs (numberf-input chunk))))
                            (selection (resolve-selection locale terms chunk inputs)))))
                (cons next acc)))
            line
