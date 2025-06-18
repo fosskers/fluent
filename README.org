@@ -34,11 +34,25 @@ check-pconf-pacnew-old = { $path } is older than its .pacnew by { $days ->
 Per-locale plural rules are provided by the [[https://github.com/fosskers/plurals][plurals]] library.
 
 * Table of Contents :TOC_5_gh:noexport:
+- [[#compatibility][Compatibility]]
 - [[#usage][Usage]]
   - [[#reading-localisations-from-disk][Reading localisations from disk]]
   - [[#localisation-lookups][Localisation lookups]]
   - [[#embedding-localisations-into-your-application][Embedding localisations into your application]]
 - [[#limitations][Limitations]]
+
+* Compatibility
+
+| Compiler  | Status |
+|-----------+--------|
+| SBCL      | ✅     |
+| ECL       | ✅     |
+| Clasp     | ✅     |
+| ABCL      | ✅     |
+| CCL       | ✅     |
+| Clisp     | ❌     |
+| Allegro   | ✅     |
+| LispWorks | ❓     |
 
 * Usage
 
