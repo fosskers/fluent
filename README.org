@@ -4,6 +4,35 @@ This is a Common Lisp implementation of [[https://projectfluent.org/][Fluent]], 
 
 See also Fluent's [[https://projectfluent.org/fluent/guide/index.html][Syntax Guide]].
 
+With Fluent, localisations are defined in per-language =.ftl= files as key-value
+pairs. Many localisations are just simple lookups:
+
+#+begin_example
+check-start = Validating your system.
+#+end_example
+
+But Fluent's strength is in the ability to inject values into the line, as well
+as perform "selections" based on grammatical rules and plural categories:
+
+#+begin_example
+check-pconf-pacnew-old = { $path } is older than its .pacnew by { $days ->
+    [one] 1 day.
+   *[many] {$days} days.
+}
+#+end_example
+
+#+begin_src lisp :export both
+(in-package :fluent)
+(let* ((loc (parse (uiop:read-file-string "tests/data/aura.ftl")))
+       (ctx (localisation->fluent loc :en)))
+  (resolve ctx "check-pconf-pacnew-old" :path "pacman.conf" :days 1))
+#+end_src
+
+#+RESULTS:
+: pacman.conf is older than its .pacnew by 1 day.
+
+Per-locale plural rules are provided by the [[https://github.com/fosskers/plurals][plurals]] library.
+
 * Table of Contents :TOC_5_gh:noexport:
 - [[#usage][Usage]]
   - [[#reading-localisations-from-disk][Reading localisations from disk]]
@@ -23,7 +52,7 @@ Your localisation files will typically have the extension =.ftl=.
 ** Localisation lookups
 
 Once you have a fully formed =fluent= context, you can perform localisation
-lookups.
+lookups. Input args into the localisation line are passed as keyword arguments.
 
 #+begin_src lisp :export both
 (in-package :fluent)
