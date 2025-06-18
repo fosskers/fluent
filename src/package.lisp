@@ -14,6 +14,17 @@
 #+nil
 (string->keyword "hello")
 
+(define-condition missing-line (error)
+  ((line     :initarg :line :reader missing-line-line)
+   (locale   :initarg :locale :reader missing-line-locale)
+   (fallback :initarg :fallback :reader missing-line-fallback))
+  (:documentation "A certain localisation couldn't be found in any language.")
+  (:report (lambda (c stream)
+             (format stream "The localisation '~a' could not be found.~%Locale: ~a~%Fallback: ~a"
+                     (missing-line-line c)
+                     (missing-line-locale c)
+                     (missing-line-fallback c)))))
+
 (define-condition unknown-locale (error)
   ((locale :initarg :locale :reader unknown-locale-locale))
   (:documentation "The user attempted to resolve via an unknown locale.")
