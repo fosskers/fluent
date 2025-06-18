@@ -12,6 +12,7 @@
        (c (localisation->fluent l :en)))
   (resolve c "check-pconf-pacnew-old" :path "pacman.conf" :days 1))
 
+(declaim (ftype (function (fluent keyword string &rest t) string) resolve-with))
 (defun resolve-with (ctx locale tag &rest inputs)
   "Find a localisation line via some explicit locale."
   (let ((loc (gethash locale (fluent-locs ctx))))
@@ -49,6 +50,7 @@
 #+nil
 (resolve-number (make-numberf :input :foo :max-frac 2) 1.123)
 
+(declaim (ftype (function (keyword hash-table list list) string) resolve-line))
 (defun resolve-line (locale terms line inputs)
   "Completely resolve some localisation line into a single string."
   (format nil "~{~a~}"
