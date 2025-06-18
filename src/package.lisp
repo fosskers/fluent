@@ -14,6 +14,12 @@
 #+nil
 (string->keyword "hello")
 
+(define-condition unknown-locale (error)
+  ((locale :initarg :locale :reader unknown-locale-locale))
+  (:documentation "The user attempted to resolve via an unknown locale.")
+  (:report (lambda (c stream)
+             (format stream "Unknown locale: ~a" (unknown-locale-locale c)))))
+
 (define-condition missing-input (error)
   ((expected :initarg :expected :reader missing-input-expected))
   (:documentation "A certain arg was expected for a localisation line, but it wasn't given.")

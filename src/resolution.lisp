@@ -2,17 +2,29 @@
 
 (in-package :fluent)
 
+(defmacro resolve (ctx tag &rest inputs)
+  "Find a localisation line by name and fully resolve it via some input args."
+  `(resolve-with ,ctx (fluent-locale ,ctx) ,tag ,@inputs))
+
 #+nil
 (let* ((s (uiop:read-file-string "tests/data/aura.ftl"))
-       (l (parse s)))
-  (resolve l "check-pconf-pacnew-old" :path "pacman.conf" :days 1))
+       (l (parse s))
+       (h (make-hash-table :test #'eq))
+       (c (make-fluent :locale :en :fallback :en :locs h)))
+  (setf (gethash :en h) l)
+  (resolve c "check-pconf-pacnew-old" :path "pacman.conf" :days 1))
 
-(defun resolve (ctx tag &rest inputs)
-  "Find a localisation line by name and fully resolve it via some input args."
-  (resolve-line (localisations-locale ctx)
-                (localisations-terms ctx)
-                (gethash tag (localisations-lines ctx))
-                inputs))
+(defun resolve-with (ctx locale tag &rest inputs)
+  "Find a localisation line via some explicit locale."
+  (let ((loc (gethash locale (fluent-locs ctx))))
+    (unless loc
+      (error 'unknown-locale :locale locale))
+    (let ((line (gethash tag (localisations-lines loc))))
+      (cond ((not line) (resolve-with ctx (fluent-fallback ctx) tag inputs))
+            (t (resolve-line locale
+                             (localisations-terms loc)
+                             line
+                             inputs))))))
 
 (declaim (ftype (function (numberf real) string) resolve-number))
 (defun resolve-number (f n)

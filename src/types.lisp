@@ -33,9 +33,19 @@
   (default nil :type boolean))
 
 (defstruct localisations
-  "A unified body of all necessary localisation lines. In the case where the chosen
-body of localisations were missing some messages, these are filled in by the
-Fallback Language."
-  (locale :en :type keyword)
-  (terms  nil :type hash-table)
-  (lines  nil :type hash-table))
+  "A body of localisation lines from a single language."
+  (terms nil :type hash-table)
+  (lines nil :type hash-table))
+
+(defstruct fluent
+  "A full localisation context, including all possible languages, the current
+expected locale, and the fallback locale."
+  (locale   nil :type keyword)
+  (fallback nil :type keyword)
+  (locs     nil :type hash-table))
+
+(defun localisation->fluent (locs locale)
+  "Mostly for testing purposes."
+  (let ((ht (make-hash-table :test #'eq :size 1)))
+    (setf (gethash locale ht) locs)
+    (make-fluent :locale locale :fallback locale :locs ht)))

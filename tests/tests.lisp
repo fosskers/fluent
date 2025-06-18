@@ -47,7 +47,7 @@
   (let ((s (uiop:read-file-string #p"tests/data/basic.ftl")))
     (finish (f:parse s)))
   (let* ((s (uiop:read-file-string #p"tests/data/aura.ftl"))
-         (l (f:parse s)))
+         (l (f::localisation->fluent (f:parse s) :en)))
     (is equal "Validating your system." (f:resolve l "check-start"))
     (fail (f:resolve l "check-env-exec"))
     (is equal "emacs installed and executable?" (f:resolve l "check-env-exec" :exec "emacs"))
