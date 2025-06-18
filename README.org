@@ -21,7 +21,7 @@ check-pconf-pacnew-old = { $path } is older than its .pacnew by { $days ->
 }
 #+end_example
 
-#+begin_src lisp :export both
+#+begin_src lisp :exports both
 (in-package :fluent)
 (let* ((loc (parse (uiop:read-file-string "tests/data/aura.ftl")))
        (ctx (localisation->fluent loc :en)))
@@ -54,7 +54,7 @@ Your localisation files will typically have the extension =.ftl=.
 Once you have a fully formed =fluent= context, you can perform localisation
 lookups. Input args into the localisation line are passed as keyword arguments.
 
-#+begin_src lisp :export both
+#+begin_src lisp :exports both
 (in-package :fluent)
 (let* ((loc (parse (uiop:read-file-string "tests/data/aura.ftl")))
        (ctx (localisation->fluent loc :en)))
