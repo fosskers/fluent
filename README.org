@@ -6,11 +6,42 @@ See also Fluent's [[https://projectfluent.org/fluent/guide/index.html][Syntax Gu
 
 * Table of Contents :TOC_5_gh:noexport:
 - [[#usage][Usage]]
+  - [[#reading-localisations-from-disk][Reading localisations from disk]]
+  - [[#localisation-lookups][Localisation lookups]]
+  - [[#embedding-localisations-into-your-application][Embedding localisations into your application]]
 - [[#limitations][Limitations]]
 
 * Usage
 
-TODO
+The examples below use =(in-package :fluent)= for brevity, but it's assumed you'll
+use a nickname in your own code, perhaps =f=.
+
+** Reading localisations from disk
+
+Your localisation files will typically have the extension =.ftl=.
+
+** Localisation lookups
+
+Once you have a fully formed =fluent= context, you can perform localisation
+lookups.
+
+#+begin_src lisp :export both
+(in-package :fluent)
+(let* ((loc (parse (uiop:read-file-string "tests/data/aura.ftl")))
+       (ctx (localisation->fluent loc :en)))
+  (resolve ctx "check-pconf-pacnew-old" :path "pacman.conf" :days 1))
+#+end_src
+
+#+RESULTS:
+: pacman.conf is older than its .pacnew by 1 day.
+
+A condition will be raised if:
+
+- The requested locale doesn't exist in the =fluent= context.
+- The requested localisation line doesn't exist in the locale.
+- Expected line inputs were missing (e.g. the =path= and =days= args above).
+
+** Embedding localisations into your application
 
 * Limitations
 

@@ -3,7 +3,12 @@
   (:shadow #:variable #:number)
   (:import-from :parcom #:<*> #:<* #:*> #:<$)
   (:local-nicknames (#:p #:parcom))
-  (:export #:parse #:resolve)
+  ;; --- Types --- ;;
+  (:export #:fluent #:fluent-locale #:fluent-fallback #:fluent-locs)
+  ;; --- Entry --- ;;
+  (:export #:parse #:resolve #:resolve-with)
+  ;; --- Conditions --- ;;
+  (:export #:missing-line #:unknown-locale #:missing-input)
   (:documentation "Software localisation via Mozilla's Project Fluent."))
 
 (in-package :fluent)
