@@ -2,7 +2,8 @@
   (:use :cl)
   (:shadow #:variable #:number)
   (:import-from :parcom #:<*> #:<* #:*> #:<$)
-  (:local-nicknames (#:p #:parcom))
+  (:local-nicknames (#:p #:parcom)
+                    (#:f #:filepaths))
   ;; --- Types --- ;;
   (:export #:fluent #:fluent-locale #:fluent-fallback #:fluent-locs)
   ;; --- Entry --- ;;

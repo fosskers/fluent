@@ -2,6 +2,9 @@
 
 (in-package :fluent)
 
+(deftype char-string ()
+  '(simple-array character (*)))
+
 (defstruct variable
   "An external value that we expect the user to provide at runtime."
   (name nil :type keyword))
@@ -45,7 +48,7 @@ expected locale, and the fallback locale."
   (locs     nil :type hash-table))
 
 (defun localisation->fluent (locs locale)
-  "Mostly for testing purposes."
+  "Construct a `fluent' context from a single collection of localisations."
   (let ((ht (make-hash-table :test #'eq :size 1)))
     (setf (gethash locale ht) locs)
     (make-fluent :locale locale :fallback locale :locs ht)))
