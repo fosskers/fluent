@@ -44,3 +44,37 @@
 
 #+nil
 (ftl-files-in-dir #p"/home/colin/code/haskell/aura/rust/aura-pm/i18n/en-US")
+
+;; TODO: 2025-07-28 Start here. You need to parse a locale keyword out of a
+;; directory path, and then read each FTL file per subdir and collate the final
+;; Hash Table.
+
+(defun dir->locale (dir)
+  "Parse a locale keyword from a directory name."
+  (parse-locale (car (last (f:components dir)))))
+
+#+nil
+(dir->locale (car (all-directories #p"/home/colin/code/haskell/aura/rust/aura-pm/i18n")))
+
+(defun localisations-in-dir (dir)
+  "Given a directory filled with `.ftl' files, parse them all and fuse them
+into a single `localisation' type."
+  (reduce (lambda (acc file) (fuse-localisations acc (parse (read-string file))))
+          (ftl-files-in-dir dir)
+          :initial-value (make-localisations :terms (make-hash-table :test #'equal)
+                                             :lines (make-hash-table :test #'equal))))
+
+#+nil
+(localisations-in-dir #p"tests/data/")
+
+(defun read-all-localisations (dir)
+  "Given a parent directory, read all per-locale localisations and form a Hash
+Table of locales paired to their specific `localisations'."
+  (let ((ht (make-hash-table :test #'eq)))
+    (dolist (sub (all-directories dir))
+      (setf (gethash (dir->locale sub) ht)
+            (localisations-in-dir sub)))
+    ht))
+
+#+nil
+(read-all-localisations #p"/home/colin/code/haskell/aura/rust/aura-pm/i18n")

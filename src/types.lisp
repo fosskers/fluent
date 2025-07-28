@@ -40,7 +40,14 @@
   (terms nil :type hash-table)
   (lines nil :type hash-table))
 
-(defstruct fluent
+(defun fuse-localisations (a b)
+  "Merge two localisations."
+  (make-localisations :terms (merge-hash-tables! (localisations-terms a)
+                                                 (localisations-terms b))
+                      :lines (merge-hash-tables! (localisations-lines a)
+                                                 (localisations-lines b))))
+
+(defstruct (fluent (:constructor fluent))
   "A full localisation context, including all possible languages, the current
 expected locale, and the fallback locale."
   (locale   nil :type keyword)

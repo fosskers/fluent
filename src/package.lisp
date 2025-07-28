@@ -7,7 +7,7 @@
   ;; --- Types --- ;;
   (:export #:fluent #:fluent-locale #:fluent-fallback #:fluent-locs)
   ;; --- Entry --- ;;
-  (:export #:parse #:resolve #:resolve-with)
+  (:export #:read-all-localisations #:parse #:resolve #:resolve-with)
   ;; --- Conditions --- ;;
   (:export #:missing-line #:unknown-locale #:missing-input)
   (:documentation "Software localisation via Mozilla's Project Fluent."))
@@ -15,7 +15,9 @@
 (in-package :fluent)
 
 (defun string->keyword (s)
-  (intern (string-upcase s) "KEYWORD"))
+  (multiple-value-bind (kw _) (intern (string-upcase s) "KEYWORD")
+    (declare (ignore _))
+    kw))
 
 #+nil
 (string->keyword "hello")
@@ -48,3 +50,30 @@
   (let ((v (getf col k)))
     (cond (v v)
           (t (error 'missing-input :expected k)))))
+
+(defun read-string (path)
+  "Read the contents of a file into a string."
+  (with-open-file (stream path :direction :input :element-type 'character)
+    (with-output-to-string (out)
+      (loop :for c := (read-char stream nil :eof)
+            :until (eq c :eof)
+            :do (write-char c out)))))
+
+#+nil
+(read-string #p"tests/data/basic.ftl")
+
+(declaim (ftype (function (hash-table hash-table) hash-table) merge-hash-tables!))
+(defun merge-hash-tables! (a b)
+  "Merge the elements of a second Hash Table into the first one. If a given key
+exists in both Hash Tables, the value of the second will be kept."
+  (maphash (lambda (k v) (setf (gethash k a) v)) b)
+  a)
+
+#+nil
+(let ((a (make-hash-table :test #'eq))
+      (b (make-hash-table :test #'eq)))
+  (setf (gethash :a a) 1)
+  (setf (gethash :b a) 2)
+  (setf (gethash :c b) 3)
+  (setf (gethash :d b) 4)
+  (merge-hash-table! a b))
