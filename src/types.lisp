@@ -47,15 +47,25 @@
                       :lines (merge-hash-tables! (localisations-lines a)
                                                  (localisations-lines b))))
 
-(defstruct (fluent (:constructor fluent))
+(defstruct fluent
   "A full localisation context, including all possible languages, the current
 expected locale, and the fallback locale."
-  (locale   nil :type keyword)
-  (fallback nil :type keyword)
-  (locs     nil :type hash-table))
+  (locale        nil :type keyword)
+  (locale-lang   nil :type keyword)
+  (fallback      nil :type keyword)
+  (fallback-lang nil :type keyword)
+  (locs          nil :type hash-table))
+
+(defun fluent (locs &key (locale :en-us) (fallback :en-us))
+  "Intelligently construct a `fluent' context."
+  (make-fluent :locale locale
+               :locale-lang (locale->lang locale)
+               :fallback fallback
+               :fallback-lang (locale->lang fallback)
+               :locs locs))
 
 (defun localisation->fluent (locs locale)
   "Construct a `fluent' context from a single collection of localisations."
   (let ((ht (make-hash-table :test #'eq :size 1)))
     (setf (gethash locale ht) locs)
-    (make-fluent :locale locale :fallback locale :locs ht)))
+    (fluent locs :locale locale :fallback locale)))

@@ -77,3 +77,39 @@ exists in both Hash Tables, the value of the second will be kept."
   (setf (gethash :c b) 3)
   (setf (gethash :d b) 4)
   (merge-hash-table! a b))
+
+(declaim (ftype (function (char-string) keyword) parse-locale))
+(defun parse-locale (s)
+  "Parse a full locale (e.g. hi-IN) from a string into a keyword."
+  (p:parse (p:pmap #'string->keyword
+                   (p:recognize (*> #'letters (p:opt (*> (p:char #\-) #'letters)))))
+           s))
+
+#+nil
+(parse-locale "hi-IN")
+#+nil
+(parse-locale "eo")
+
+(defun letters (offset)
+  "Some letters."
+  (funcall (p:take-while1 #'p:ascii-letter?) offset))
+
+#+nil
+(p:parse #'letters "hi-IN")
+
+(declaim (ftype (function (keyword) keyword) locale->lang))
+(defun locale->lang (locale)
+  "Extract the language portion of a locale. So, the `en' in `en-US'."
+  (p:parse (p:pmap #'string->keyword (p:recognize #'letters))
+           #+sbcl
+           (base-string->simple-string (symbol-name locale))
+           #-sbcl
+           (symbol-name locale)))
+
+#+nil
+(locale->lang (parse-locale "hi-IN"))
+
+#+sbcl
+(defun base-string->simple-string (base)
+  (let ((simple (make-array (length base) :element-type 'character)))
+    (replace simple base)))

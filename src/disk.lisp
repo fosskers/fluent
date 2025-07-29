@@ -12,25 +12,6 @@
 
 (in-package :fluent)
 
-(declaim (ftype (function (char-string) keyword) parse-locale))
-(defun parse-locale (s)
-  "Parse a full locale (e.g. hi-IN) from a string into a keyword."
-  (p:parse (p:pmap #'string->keyword
-                   (p:recognize (*> #'letters (p:opt (*> +dash+ #'letters)))))
-           s))
-
-#+nil
-(parse-locale "hi-IN")
-#+nil
-(parse-locale "eo")
-
-(defun letters (offset)
-  "Some letters."
-  (funcall (p:take-while1 #'p:ascii-letter?) offset))
-
-#+nil
-(p:parse #'letters "hi-IN")
-
 (defun all-directories (dir)
   "Find all subdirectories within a given parent directory."
   (directory (f:ensure-directory (f:join dir "*"))))
@@ -44,10 +25,6 @@
 
 #+nil
 (ftl-files-in-dir #p"/home/colin/code/haskell/aura/rust/aura-pm/i18n/en-US")
-
-;; TODO: 2025-07-28 Start here. You need to parse a locale keyword out of a
-;; directory path, and then read each FTL file per subdir and collate the final
-;; Hash Table.
 
 (defun dir->locale (dir)
   "Parse a locale keyword from a directory name."

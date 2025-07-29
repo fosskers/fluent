@@ -44,10 +44,9 @@
 
 (define-test parsing-files
   :parent parsing
-  (let ((s (uiop:read-file-string #p"tests/data/basic.ftl")))
+  (let ((s (f::read-string #p"tests/en-us/basic.ftl")))
     (finish (f:parse s)))
-  (let* ((s (uiop:read-file-string #p"tests/data/aura.ftl"))
-         (l (f::localisation->fluent (f:parse s) :en)))
+  (let ((l (f:fluent (f:read-all-localisations #p"tests"))))
     (is equal "Validating your system." (f:resolve l "check-start"))
     (fail (f:resolve l "check-env-exec"))
     (is equal "emacs installed and executable?" (f:resolve l "check-env-exec" :exec "emacs"))
