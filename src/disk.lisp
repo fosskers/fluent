@@ -28,10 +28,17 @@
 
 (defun dir->locale (dir)
   "Parse a locale keyword from a directory name."
-  (parse-locale (car (last (f:components dir)))))
+  (parse-locale (clean-string (car (last (f:components dir))))))
 
 #+nil
 (dir->locale (car (all-directories #p"/home/colin/code/haskell/aura/rust/aura-pm/i18n")))
+
+(defun clean-string (s)
+  "Ensure that the string is the right type for parsing."
+  #+ecl
+  (into-simple-string s)
+  #-ecl
+  s)
 
 (defun localisations-in-dir (dir)
   "Given a directory filled with `.ftl' files, parse them all and fuse them
