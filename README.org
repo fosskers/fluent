@@ -38,7 +38,7 @@ Per-locale plural rules are provided by the [[https://github.com/fosskers/plural
 - [[#usage][Usage]]
   - [[#reading-localisations-from-disk][Reading localisations from disk]]
   - [[#localisation-lookups][Localisation lookups]]
-  - [[#embedding-localisations-into-your-application][Embedding localisations into your application]]
+  - [[#fallback][Fallback]]
 - [[#limitations][Limitations]]
 
 * Compatibility
@@ -61,17 +61,60 @@ use a nickname in your own code, perhaps =f=.
 
 ** Reading localisations from disk
 
-Your localisation files will typically have the extension =.ftl=.
+Your localisation files must have the extension =.ftl= and be separated into
+different subdirectories by their locale:
+
+#+begin_example
+i18n
+├── ar-SA
+│   └── your-project.ftl
+├── bn-BD
+│   └── your-project.ftl
+├── cs-CZ
+│   └── your-project.ftl
+├── de-DE
+│   └── your-project.ftl
+├── en-US
+│   └── your-project.ftl
+#+end_example
+
+Each subdirectory can contain as many =.ftl= files as is convenient to you; their
+contents will be fused when read.
+
+#+begin_src lisp :exports both
+(in-package :fluent)
+(fluent (read-all-localisations #p"i18n"))
+#+end_src
+
+#+RESULTS:
+: #S(FLUENT
+:    :LOCALE :EN-US
+:    :LOCALE-LANG :EN
+:    :FALLBACK :EN-US
+:    :FALLBACK-LANG :EN
+:    :LOCS #<HASH-TABLE :TEST EQ :COUNT 0 {120DD70B23}>)
+
+As you can see, you pass a parent directory (=i18n/= here), and all =.ftl= files are
+automatically detected.
 
 ** Localisation lookups
 
 Once you have a fully formed =fluent= context, you can perform localisation
 lookups. Input args into the localisation line are passed as keyword arguments.
+For example, the following message:
+
+#+begin_example
+check-pconf-pacnew-old = { $path } is older than its .pacnew by { $days ->
+    [one] 1 day.
+   *[many] {$days} days.
+}
+#+end_example
+
+can be resolved like so:
 
 #+begin_src lisp :exports both
 (in-package :fluent)
-(let* ((loc (parse (uiop:read-file-string "tests/data/aura.ftl")))
-       (ctx (localisation->fluent loc :en)))
+(let* ((ctx (fluent (read-all-localisations #p"tests"))))
   (resolve ctx "check-pconf-pacnew-old" :path "pacman.conf" :days 1))
 #+end_src
 
@@ -84,7 +127,41 @@ A condition will be raised if:
 - The requested localisation line doesn't exist in the locale.
 - Expected line inputs were missing (e.g. the =path= and =days= args above).
 
-** Embedding localisations into your application
+** Fallback
+
+A "fallback locale" was mentioned above, which can be set when you first create
+a =fluent= context:
+
+#+begin_src lisp :exports both
+(in-package :fluent)
+(let* ((ctx (fluent (read-all-localisations #p"tests") :fallback :ja-jp)))
+  (resolve ctx "sonzai-shinai"))
+#+end_src
+
+#+RESULTS:
+: 大変!
+
+In this case, the line =sonzai-shinai= had no localisation within the default
+=:en-us= locale, so it defaulted to looking within the Japanese locale. More than
+likely English will be your fallback, with your initial =:locale= being some other
+localisation target, as in:
+
+#+begin_src lisp :exports both
+(in-package :fluent)
+(fluent (read-all-localisations #p"tests") :locale :ja-jp :fallback :en-us)
+#+end_src
+
+#+RESULTS:
+: #S(FLUENT
+:    :LOCALE :JA-JP
+:    :LOCALE-LANG :JA
+:    :FALLBACK :EN-US
+:    :FALLBACK-LANG :EN
+:    :LOCS #<HASH-TABLE :TEST EQ :COUNT 2 {12078F9753}>)
+
+You are free to mutate this =fluent= struct at runtime or call =resolve-with=
+directly to match a user's locale settings in a more dynamic way. For instance,
+if they change language settings within your app after opening it.
 
 * Limitations
 
