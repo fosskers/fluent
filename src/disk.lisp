@@ -14,10 +14,27 @@
 
 (defun all-directories (dir)
   "Find all subdirectories within a given parent directory."
-  (directory (f:ensure-directory (f:join dir "*"))))
+  (let ((entries (directory (f:ensure-directory (f:join dir "*")))))
+    #+(or allegro abcl)
+    (unique-parents entries)
+    #+(not (or allegro abcl))
+    entries))
 
 #+nil
 (all-directories #p"/home/colin/code/haskell/aura/rust/aura-pm/i18n")
+
+;; NOTE: 2025-07-31 This is only necessary for naughty compilers whose
+;; `directory' implementation is naturally recursive (at least with respect to
+;; `*') and can't be stopped.
+#+(or allegro abcl)
+(defun unique-parents (entries)
+  "Given a list of files, determine their unique parent directories."
+  (let ((ht (make-hash-table :test #'equal)))
+    (dolist (entry entries)
+      (let ((parent (f:parent entry)))
+        (setf (gethash parent ht) t)))
+    (loop :for key :being :the :hash-keys :of ht
+          :collect key)))
 
 (defun ftl-files-in-dir (dir)
   "Yield all the `.ftl' files in a given directory."
