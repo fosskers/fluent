@@ -92,7 +92,7 @@ contents will be fused when read.
 :    :LOCALE-LANG :EN
 :    :FALLBACK :EN-US
 :    :FALLBACK-LANG :EN
-:    :LOCS #<HASH-TABLE :TEST EQ :COUNT 0 {120DD70B23}>)
+:    :LOCS #<HASH-TABLE :TEST EQ :COUNT 5 {120DD70B23}>)
 
 As you can see, you pass a parent directory (=i18n/= here), and all =.ftl= files are
 automatically detected.
