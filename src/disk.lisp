@@ -14,19 +14,37 @@
 
 (defun all-directories (dir)
   "Find all subdirectories within a given parent directory."
-  (let ((entries (directory (f:ensure-directory (f:join dir "*")))))
-    #+(or allegro abcl)
-    (unique-parents entries)
-    #+(not (or allegro abcl))
-    entries))
+  #+allegro
+  (all-directories-allegro dir)
+  #-allegro
+  (let ((dirs (directory (f:ensure-directory (f:join dir "*")))))
+    #+abcl
+    (unique-parents dirs)
+    #+(not abcl)
+    dirs))
 
 #+nil
 (all-directories #p"/home/colin/code/haskell/aura/rust/aura-pm/i18n")
 
+#+allegro
+(defun all-directories-allegro (dir)
+  "Logic specific to Allegro functionality, as its behaviour of `directory' does
+not match other implementations."
+  (let ((dir (f:ensure-directory dir))
+        (dirs '()))
+    (excl:map-over-directory
+     (lambda (path) (when (and (f:directory? path)
+                               (not (equalp path dir)))
+                      (push path dirs)))
+     dir
+     :include-directories t
+     :recurse nil)
+    dirs))
+
 ;; NOTE: 2025-07-31 This is only necessary for naughty compilers whose
 ;; `directory' implementation is naturally recursive (at least with respect to
 ;; `*') and can't be stopped.
-#+(or allegro abcl)
+#+abcl
 (defun unique-parents (entries)
   "Given a list of files, determine their unique parent directories."
   (let ((ht (make-hash-table :test #'equal)))
