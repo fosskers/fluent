@@ -70,9 +70,9 @@ not match other implementations."
 
 (defun clean-string (s)
   "Ensure that the string is the right type for parsing."
-  #+ecl
-  (into-simple-string s)
-  #-ecl
+  #+(or sbcl ecl)
+  (elevate-string s)
+  #-(or sbcl ecl)
   s)
 
 (defun localisations-in-dir (dir)

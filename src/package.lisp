@@ -102,13 +102,14 @@ exists in both Hash Tables, the value of the second will be kept."
   "Extract the language portion of a locale. So, the `en' in `en-US'."
   (p:parse (p:pmap #'string->keyword (p:recognize #'letters))
            #+(or sbcl ecl)
-           (into-simple-string (symbol-name locale))
+           (elevate-string (symbol-name locale))
            #-(or sbcl ecl)
            (symbol-name locale)))
 
 #+nil
 (locale->lang (parse-locale "hi-IN"))
 
-(defun into-simple-string (base)
+(defun elevate-string (base)
+  "Forced workaround involving `simple-base-string' stupidity."
   (let ((simple (make-array (length base) :element-type 'character)))
     (replace simple base)))
