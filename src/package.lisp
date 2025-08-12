@@ -51,6 +51,7 @@
     (cond (v v)
           (t (error 'missing-input :expected k)))))
 
+(declaim (ftype (function ((or string pathname)) (simple-array character (*))) read-string))
 (defun read-string (path)
   "Read the contents of a file into a string."
   (with-open-file (stream path :direction :input :element-type 'character)

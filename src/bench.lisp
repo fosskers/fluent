@@ -1,36 +1,43 @@
 (in-package :fluent)
 
-(defun read-string-orig (path)
+(defun read-string-sequence (path)
   "Read the contents of a file into a string."
   (with-open-file (stream path :direction :input)
     (let ((data (make-string (file-length stream))))
       (read-sequence data stream)
       data)))
 
-(defun read-string-stream (path)
-  "Read the contents of a file into a string using a string output stream."
+(defun read-string-vector (path)
+  "Read the contents of a file into a string."
   (with-open-file (stream path :direction :input :element-type 'character)
-    (with-output-to-string (out)
-      (loop :for char := (read-char stream nil :eof)
-            :until (eq char :eof)
-            :do (write-char char out)))))
+    (let ((s (make-array 16 :element-type 'character :adjustable t :fill-pointer 0)))
+      (loop :for c := (read-char stream nil :eof)
+            :until (eq c :eof)
+            :do (vector-push-extend c s))
+      s)))
 
 #+nil
-(let ((s (read-string-stream #p"/home/colin/code/haskell/aura/rust/aura-pm/i18n/ar-SA/aura_pm.ftl")))
+(let ((s (read-string #p"README.org")))
   (schar s (1- (length s))))
 
 #+nil
-(let ((s (uiop:read-file-string #p"/home/colin/code/haskell/aura/rust/aura-pm/i18n/ar-SA/aura_pm.ftl")))
+(let ((s (uiop:read-file-string #p"README.org")))
   (schar s (1- (length s))))
 
 #+nil
-(let ((s #p"/home/colin/code/haskell/aura/rust/aura-pm/i18n/ar-SA/aura_pm.ftl"))
+(let ((s #p"README.org"))
+  (format t "--- UIOP ---~%")
   (time (dotimes (n 1000)
           (uiop:read-file-string s)))
+  (format t "--- READ-SEQUENCE ---~%")
   (time (dotimes (n 1000)
-          (read-string-stream s)))
+          (read-string-sequence s)))
+  (format t "--- VECTOR ---~%")
   (time (dotimes (n 1000)
-          (read-string-orig s))))
+          (read-string-vector s)))
+  (format t "--- GOOD ---~%")
+  (time (dotimes (n 1000)
+          (read-string s))))
 
 ;; CONCLUSION
 ;;
@@ -38,3 +45,5 @@
 ;; implementation is "just wrong" w.r.t. non-ascii chars, so can't be used, even
 ;; though it is the fastest and most memory efficient. I've adopted the
 ;; stream-based approach.
+;;
+;; Also note that the stream approach yields a `(simple-array character (*))'!
