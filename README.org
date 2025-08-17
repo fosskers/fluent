@@ -45,14 +45,16 @@ Per-locale plural rules are provided by the [[https://github.com/fosskers/plural
 
 | Compiler  | Status |
 |-----------+--------|
-| SBCL      | ✅     |
-| ECL       | ✅     |
-| Clasp     | ✅     |
-| ABCL      | ✅     |
-| CCL       | ✅     |
-| Clisp     | ❌     |
-| Allegro   | ✅     |
-| LispWorks | ❓     |
+| SBCL      | ✅    |
+| ECL       | ✅    |
+| CMUCL     | ✅    |
+| ABCL      | ✅    |
+| Clasp     | ✅    |
+| CCL       | ✅    |
+| Clisp     | ❌    |
+|-----------+--------|
+| Allegro   | ✅    |
+| LispWorks | ❓    |
 
 * Usage
 
